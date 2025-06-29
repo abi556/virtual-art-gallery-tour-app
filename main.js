@@ -100,3 +100,51 @@ class VirtualArtGallery {
         directionalLight.shadow.camera.top = 20;
         directionalLight.shadow.camera.bottom = -20;
         this.scene.add(directionalLight);
+
+        // Spot Lights for Art Pieces
+        const spotLight1 = new THREE.SpotLight(0xffffff, 1.2);
+        spotLight1.position.set(-5, 8, 0);
+        spotLight1.angle = Math.PI / 6;
+        spotLight1.penumbra = 0.3;
+        spotLight1.castShadow = true;
+        this.scene.add(spotLight1);
+
+        const spotLight2 = new THREE.SpotLight(0xffffff, 1.2);
+        spotLight2.position.set(5, 8, 0);
+        spotLight2.angle = Math.PI / 6;
+        spotLight2.penumbra = 0.3;
+        spotLight2.castShadow = true;
+        this.scene.add(spotLight2);
+
+        // Point Light for Center
+        const pointLight = new THREE.PointLight(0xffffff, 1.2, 80);
+        pointLight.position.set(0, 6, 0);
+        this.scene.add(pointLight);
+
+        // Additional Point Lights for front and right walls
+        const frontWallLight = new THREE.PointLight(0xffffff, 1.5, 60);
+        frontWallLight.position.set(0, 5, 13);
+        this.scene.add(frontWallLight);
+
+        const rightWallLight = new THREE.PointLight(0xffffff, 1.5, 60);
+        rightWallLight.position.set(13, 5, 0);
+        this.scene.add(rightWallLight);
+
+        // Extra intense point light at the center of the right wall
+        const rightWallCenterLight = new THREE.PointLight(0xffffff, 2.2, 40);
+        rightWallCenterLight.position.set(20, 5, 0);
+        this.scene.add(rightWallCenterLight);
+
+        // Four more point lights at the corners
+        const corners = [
+            { x: -18, y: 5, z: -13 },
+            { x: 18, y: 5, z: -13 },
+            { x: -18, y: 5, z: 13 },
+            { x: 18, y: 5, z: 13 }
+        ];
+        corners.forEach(corner => {
+            const cornerLight = new THREE.PointLight(0xffffff, 1.2, 50);
+            cornerLight.position.set(corner.x, corner.y, corner.z);
+            this.scene.add(cornerLight);
+        });
+    }
