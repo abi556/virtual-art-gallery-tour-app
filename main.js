@@ -1453,6 +1453,29 @@ class VirtualArtGallery {
         leftSegment.rotation.y = Math.PI;
         leftSegment.receiveShadow = true;
         this.scene.add(leftSegment);
-
+        const rightSegment = new THREE.Mesh(
+            new THREE.PlaneGeometry((width - doorWidth) / 2, doorHeight),
+            wallMaterial
+        );
+        rightSegment.position.set((width + doorWidth) / 4, floorY + doorHeight / 2, frontWallZ);
+        rightSegment.rotation.y = Math.PI;
+        rightSegment.receiveShadow = true;
+        this.scene.add(rightSegment);
+        
+        // Header segment
+        if (wallHeight > doorHeight) {
+            const headerHeight = wallHeight - doorHeight;
+            const headerSegment = new THREE.Mesh(
+                new THREE.PlaneGeometry(doorWidth, headerHeight),
+                wallMaterial
+            );
+            headerSegment.position.set(0, floorY + doorHeight + headerHeight / 2, frontWallZ);
+            headerSegment.rotation.y = Math.PI;
+            headerSegment.receiveShadow = true;
+            this.scene.add(headerSegment);
+        }
+        
+        console.log('Fallback door created successfully');
+    }
 
 }
