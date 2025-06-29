@@ -1,0 +1,28 @@
+{
+  "name": "virtual-art-gallery-tour",
+  "version": "1.0.0",
+  "description": "Interactive 3D Virtual Art Gallery Tour using Three.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && gh-pages -d dist"
+  },
+  "dependencies": {
+    "three": "^0.162.0"
+  },
+  "devDependencies": {
+    "vite": "^5.2.8",
+    "gh-pages": "^6.1.1"
+  },
+  "keywords": [
+    "threejs",
+    "3d",
+    "art-gallery",
+    "virtual-tour",
+    "webgl"
+  ],
+  "author": "Abiy Hailu, Natnael Eyuel, Yamlak Negash, Dame Abera, Eyerusalem T/brhan, Kaku Amsalu",
+  "license": "MIT"
+} 
