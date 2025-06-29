@@ -450,3 +450,13 @@ class VirtualArtGallery {
                 this.scene.add(artObj);
                 this.sculptures.push(artObj);
                 sculptureObject = artObj;
+// Add a spotlight above each procedural sculpture
+                const spot = new THREE.SpotLight(ped.artColor, 1.2, 10, Math.PI / 6, 0.3, 1);
+                spot.position.set(ped.pos[0], ped.pos[1] + 7, ped.pos[2]);
+                spot.target = artObj;
+                spot.castShadow = true;
+                this.scene.add(spot);
+            } else if (ped.glb) {
+                gltfLoader.load(ped.glb, (gltf) => {
+                    const model = gltf.scene;
+                    
