@@ -710,4 +710,127 @@ class VirtualArtGallery {
                     artist: 'Johannes Vermeer', 
                     year: '1665', 
                     description: 'Often called the "Mona Lisa of the North," this captivating portrait showcases Vermeer\'s mastery of light and detail. The subject\'s enigmatic gaze and the luminous pearl earring create an intimate, timeless moment that has fascinated viewers for centuries.' 
-                };            
+                };  
+        const rightWallY = 4;
+        const rightWallX = 20 - 0.06; // frameThickness/2 from the right wall
+        const rightWallZ = 0; // center of the wall
+        
+        const rightImage = new window.Image();
+        rightImage.src = rightWallImage.file;
+        rightImage.onload = () => {
+            const aspect = rightImage.width / rightImage.height;
+            const paintingHeight = 2.5;
+            const paintingWidth = paintingHeight * aspect;
+            const frameThickness = 0.12;
+            const frameWidth = paintingWidth + 0.2;
+            
+            // Frame
+            const frameGeo = new THREE.BoxGeometry(frameWidth, paintingHeight + 0.2, frameThickness);
+            const frameMat = new THREE.MeshPhysicalMaterial({
+                color: 0x8d6748,
+                roughness: 0.4,
+                metalness: 0.3,
+                clearcoat: 0.2,
+                reflectivity: 0.2
+            });
+            const frame = new THREE.Mesh(frameGeo, frameMat);
+            frame.position.set(rightWallX, rightWallY, rightWallZ);
+            frame.rotation.y = -Math.PI / 2; // Face inward
+            frame.castShadow = true;
+            frame.receiveShadow = true;
+            this.scene.add(frame);
+            
+            // Painting - positioned slightly in front of the frame
+            const paintingGeo = new THREE.PlaneGeometry(paintingWidth, paintingHeight);
+            const texture = textureLoader.load(rightWallImage.file);
+            const paintingMat = new THREE.MeshLambertMaterial({ map: texture });
+            const painting = new THREE.Mesh(paintingGeo, paintingMat);
+            // Position the painting slightly in front of the frame (along X-axis for right wall)
+            painting.position.set(rightWallX - frameThickness / 2 - 0.01, rightWallY, rightWallZ);
+            painting.rotation.y = -Math.PI / 2; // Face inward
+            painting.castShadow = true;
+            painting.receiveShadow = true;
+            painting.userData = {
+                title: rightWallImage.title,
+                artist: rightWallImage.artist,
+                year: rightWallImage.year,
+                description: rightWallImage.description
+            };
+            this.scene.add(painting);
+            this.artPieces.push(painting);
+
+            // Add spotlight fixture and lighting for the right wall painting
+            const rightWallLightX = 20 - 0.06; // Same X as the painting
+            const rightWallLightY = 6.5; // Above the painting
+            const rightWallLightZ = 0; // Same Z as the painting
+            
+            // Cylindrical light fixture
+            const fixtureGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8);
+            const fixtureMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0x2c2c2c,
+                roughness: 0.8,
+                metalness: 0.9,
+                clearcoat: 0.3
+            });
+            const lightFixture = new THREE.Mesh(fixtureGeometry, fixtureMaterial);
+            lightFixture.position.set(rightWallLightX, rightWallLightY, rightWallLightZ);
+            lightFixture.rotation.z = Math.PI / 2; // Rotate to point downward
+            lightFixture.castShadow = true;
+            lightFixture.receiveShadow = true;
+            this.scene.add(lightFixture);
+            
+            // Rod connecting fixture to wall
+            const rodGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2, 8);
+            const rodMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0x1a1a1a,
+                roughness: 0.6,
+                metalness: 0.8
+            });
+            const rod = new THREE.Mesh(rodGeometry, rodMaterial);
+            rod.position.set(rightWallLightX - 1, rightWallLightY, rightWallLightZ);
+            rod.castShadow = true;
+            rod.receiveShadow = true;
+            this.scene.add(rod);
+            
+            // Spotlight from the fixture
+            const rightWallSpotlight = new THREE.SpotLight(0xffffff, 2.0, 15, Math.PI / 6, 0.3, 1);
+            rightWallSpotlight.position.set(rightWallLightX, rightWallLightY - 0.2, rightWallLightZ);
+            rightWallSpotlight.target.position.set(rightWallLightX, rightWallLightY - 2, rightWallLightZ);
+            rightWallSpotlight.castShadow = true;
+            rightWallSpotlight.shadow.mapSize.width = 1024;
+            rightWallSpotlight.shadow.mapSize.height = 1024;
+            rightWallSpotlight.shadow.camera.near = 0.5;
+            rightWallSpotlight.shadow.camera.far = 20;
+            this.scene.add(rightWallSpotlight);
+            this.scene.add(rightWallSpotlight.target);
+            
+            // Additional wall-mounted lights for better illumination
+            const wallLightPositions = [
+                { x: 19.5, y: 6, z: -3 },
+                { x: 19.5, y: 6, z: 3 },
+                { x: 19.5, y: 3, z: -1.5 },
+                { x: 19.5, y: 3, z: 1.5 }
+            ];
+            
+            wallLightPositions.forEach(pos => {
+                // Small wall-mounted light fixture
+                const wallFixtureGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 6);
+                const wallFixtureMat = new THREE.MeshPhysicalMaterial({
+                    color: 0x3a3a3a,
+                    roughness: 0.7,
+                    metalness: 0.6
+                });
+                const wallFixture = new THREE.Mesh(wallFixtureGeo, wallFixtureMat);
+                wallFixture.position.set(pos.x, pos.y, pos.z);
+                wallFixture.rotation.z = Math.PI / 2;
+                wallFixture.castShadow = true;
+                wallFixture.receiveShadow = true;
+                this.scene.add(wallFixture);
+                
+                // Point light from wall fixture
+                const wallLight = new THREE.PointLight(0xffffff, 0.8, 8, 2);
+                wallLight.position.set(pos.x - 0.1, pos.y, pos.z);
+                wallLight.castShadow = true;
+                this.scene.add(wallLight);
+            });
+        };
