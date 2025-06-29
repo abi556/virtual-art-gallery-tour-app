@@ -631,3 +631,83 @@ class VirtualArtGallery {
                             description: 'A powerful expressionist work capturing the anxiety and existential dread of modern life. The figure\'s anguished expression against a swirling, colorful sky has become a universal symbol of human emotion and psychological turmoil.' 
                         }
                     ];     
+         const leftWallY = 4;
+                const wallX = -20 + 0.06; // frameThickness/2, will be updated per frame
+                const wallZMin = -12; // start of left wall (adjust as needed)
+                const wallZMax = 12;  // end of left wall (adjust as needed)
+                const wallUsableLength = wallZMax - wallZMin;
+                const paintingHeight = 2.5;
+                const frameThickness = 0.12;
+                // Preload all images to get aspect ratios
+                Promise.all(leftWallImages.map(img => {
+                    return new Promise(resolve => {
+                        const image = new window.Image();
+                        image.src = img.file;
+                        image.onload = () => {
+                            const aspect = image.width / image.height;
+                            const paintingWidth = paintingHeight * aspect;
+                            const frameWidth = paintingWidth + 0.2;
+                            resolve({ ...img, aspect, paintingWidth, frameWidth });
+                        };
+                    });
+                })).then(paintings => {
+                    // Calculate total width of all frames
+                    const totalFramesWidth = paintings.reduce((sum, p) => sum + p.frameWidth, 0);
+                    const numGaps = paintings.length - 1;
+                    // Choose a reasonable gap (or maximize it to fill the wall)
+                    let gap = 1.0; // initial guess
+                    let groupWidth = totalFramesWidth + numGaps * gap;
+                    if (groupWidth < wallUsableLength) {
+                        gap = (wallUsableLength - totalFramesWidth) / (paintings.length + 1);
+                        groupWidth = totalFramesWidth + numGaps * gap;
+                    }
+                    // Center the group
+                    const groupStartZ = (wallZMin + wallZMax) / 2 - groupWidth / 2;
+                    let currentZ = groupStartZ;
+                    paintings.forEach((p, idx) => {
+                        // Frame
+                        const frameGeo = new THREE.BoxGeometry(p.frameWidth, paintingHeight + 0.2, frameThickness);
+                        const frameMat = new THREE.MeshPhysicalMaterial({
+                            color: 0x8d6748,
+                            roughness: 0.4,
+                            metalness: 0.3,
+                            clearcoat: 0.2,
+                            reflectivity: 0.2
+                        });
+                        const frame = new THREE.Mesh(frameGeo, frameMat);
+                        frame.position.set(wallX, leftWallY, currentZ + p.frameWidth / 2);
+                        frame.rotation.y = Math.PI / 2;
+                        frame.castShadow = true;
+                        frame.receiveShadow = true;
+                        this.scene.add(frame);
+                        // Painting - positioned slightly in front of the frame
+                        const paintingGeo = new THREE.PlaneGeometry(p.paintingWidth, paintingHeight);
+                        const texture = textureLoader.load(p.file);
+                        const paintingMat = new THREE.MeshLambertMaterial({ map: texture });
+                        const painting = new THREE.Mesh(paintingGeo, paintingMat);
+                        // Position the painting slightly in front of the frame (along X-axis for left wall)
+                        painting.position.set(wallX + frameThickness / 2 + 0.01, leftWallY, currentZ + p.frameWidth / 2);
+                        painting.rotation.y = Math.PI / 2;
+                        painting.castShadow = true;
+                        painting.receiveShadow = true;
+                        painting.userData = {
+                            title: p.title,
+                            artist: p.artist,
+                            year: p.year,
+                            description: p.description
+                        };
+                        this.scene.add(painting);
+                        this.artPieces.push(painting);
+                        // Move to next position
+                        currentZ += p.frameWidth + gap;
+                    });
+                });
+        
+                // Add a single painting to the center of the right wall
+                const rightWallImage = { 
+                    file: '/art/9.png', 
+                    title: 'Girl with a Pearl Earring', 
+                    artist: 'Johannes Vermeer', 
+                    year: '1665', 
+                    description: 'Often called the "Mona Lisa of the North," this captivating portrait showcases Vermeer\'s mastery of light and detail. The subject\'s enigmatic gaze and the luminous pearl earring create an intimate, timeless moment that has fascinated viewers for centuries.' 
+                };            
