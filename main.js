@@ -148,3 +148,51 @@ class VirtualArtGallery {
             this.scene.add(cornerLight);
         });
     }
+
+    setupGallery() {
+        // Floor with checkerboard texture (now 40x30)
+        const width = 40;
+        const depth = 30;
+        const floorGeometry = new THREE.PlaneGeometry(width, depth);
+        const checkerboardTexture = this.createCheckerboardTexture(10, 10, 1024, 768);
+        checkerboardTexture.wrapS = THREE.RepeatWrapping;
+        checkerboardTexture.wrapT = THREE.RepeatWrapping;
+        checkerboardTexture.repeat.set(1, 1);
+        const floorMaterial = new THREE.MeshLambertMaterial({ 
+            map: checkerboardTexture,
+            side: THREE.DoubleSide
+        });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        const floorY = 0; // Align floor with bottom of door
+        floor.position.y = floorY;
+        floor.receiveShadow = true;
+        this.scene.add(floor);
+
+        // Walls
+        this.createWalls(width, depth);
+        
+        // Art Pieces
+        this.createArtPieces();
+        
+        // Decorative Elements
+        this.createDecorations();
+    }
+
+    createCheckerboardTexture(rows, cols, width, height) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        const cellWidth = width / cols;
+        const cellHeight = height / rows;
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                ctx.fillStyle = (x + y) % 2 === 0 ? '#fff' : '#000';
+                ctx.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+            }
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
