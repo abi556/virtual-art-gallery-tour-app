@@ -196,3 +196,6 @@ class VirtualArtGallery {
         texture.needsUpdate = true;
         return texture;
     }
+
+// Initialize the application
+const gallery = new VirtualArtGallery();
