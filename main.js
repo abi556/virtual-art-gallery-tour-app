@@ -474,3 +474,25 @@ class VirtualArtGallery {
                                             scale *= 2;
                                         }
                                         model.scale.set(scale, scale, scale);
+ // Recalculate bounding box and center after scaling for perfect centering
+                    if (
+                        ped.title === "The Thinker (Replica)" ||
+                        ped.title === "Bust of Roza Loewenfeld"
+                    ) {
+                        const newBox = new THREE.Box3().setFromObject(model);
+                        const newCenter = new THREE.Vector3();
+                        newBox.getCenter(newCenter);
+                        model.position.set(
+                            ped.pos[0] - newCenter.x,
+                            ped.pos[1] + 2.1 - newCenter.y,
+                            ped.pos[2] - newCenter.z
+                        );
+                    } else {
+                        const center = new THREE.Vector3();
+                        box.getCenter(center);
+                        model.position.set(
+                            ped.pos[0] - center.x * scale,
+                            ped.pos[1] + 2.1 - center.y * scale,
+                            ped.pos[2] - center.z * scale
+                        );
+                    }                                        
