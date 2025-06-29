@@ -1414,6 +1414,45 @@ class VirtualArtGallery {
         };
         requestAnimationFrame(animate);
     }
+    createFallbackDoor(width, depth, frontWallZ, wallHeight, floorY, wallMaterial) {
+        // Create a simple door geometry as fallback if GLTF loading fails
+        const doorWidth = 6;
+        const doorHeight = wallHeight * 0.8; // 80% of wall height
+        
+        const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, 0.2);
+        const doorMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x8d6748, // Wood color
+            roughness: 0.6,
+            metalness: 0.1,
+            clearcoat: 0.3
+        });
+        
+        const fallbackDoor = new THREE.Mesh(doorGeometry, doorMaterial);
+        fallbackDoor.position.set(0, floorY + doorHeight / 2, frontWallZ - 0.1);
+        fallbackDoor.castShadow = true;
+        fallbackDoor.receiveShadow = true;
+        
+        // Add metadata
+        fallbackDoor.userData = {
+            title: "Grand Entrance Door",
+            artist: "Architectural Design",
+            year: "2024",
+            description: "A magnificent entrance door crafted with precision and elegance. This architectural masterpiece serves as the gateway to our virtual art gallery, featuring intricate details and a timeless design that welcomes visitors into the world of artistic wonder.",
+            isDoor: true
+        };
+        
+        this.door = fallbackDoor;
+        this.scene.add(fallbackDoor);
+        
+        // Create wall segments around the door
+        const leftSegment = new THREE.Mesh(
+            new THREE.PlaneGeometry((width - doorWidth) / 2, doorHeight),
+            wallMaterial
+        );
+        leftSegment.position.set(-(width + doorWidth) / 4, floorY + doorHeight / 2, frontWallZ);
+        leftSegment.rotation.y = Math.PI;
+        leftSegment.receiveShadow = true;
+        this.scene.add(leftSegment);
 
 
 }
