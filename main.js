@@ -561,4 +561,73 @@ class VirtualArtGallery {
                                 }
                                 // No art object for the other stand (leave empty)
                             });
-                            
+
+            // Add two benches near the left and right walls
+                    const benchPositions = [
+                        { x: -16, y: 1, z: 0 }, // left wall
+                        { x: 16, y: 1, z: 0 }   // right wall
+                    ];
+                    benchPositions.forEach((pos, idx) => {
+                        gltfLoader.load('/models/bench.glb', (gltf) => {
+                            const model = gltf.scene;
+                            // Center and scale the bench
+                            const box = new THREE.Box3().setFromObject(model);
+                            const size = new THREE.Vector3();
+                            box.getSize(size);
+                            const maxDim = Math.max(size.x, size.y, size.z);
+                            let scale = 2.5 / maxDim; // scale so bench is ~2.5 units wide
+                            scale *= 3; // scale benches 3x larger
+                            model.scale.set(scale, scale, scale);
+                            // Recenter to sit on the floor
+                            const center = new THREE.Vector3();
+                            box.getCenter(center);
+                            // Calculate scaled minY for precise floor placement
+                            const minY = box.min.y * scale;
+                            model.position.set(
+                                pos.x - center.x * scale,
+                                0.01 - minY, // minimal gap above floor
+                                pos.z - center.z * scale
+                            );
+                            model.traverse(child => {
+                                if (child.isMesh) {
+                                    // Force a simple brown material to avoid too many textures
+                                    child.material = new THREE.MeshStandardMaterial({ color: 0x8d6748 });
+                                    child.castShadow = true;
+                                    child.receiveShadow = true;
+                                }
+                            });
+                            this.scene.add(model);
+                        });
+                    });
+            
+                    // Add paintings to the left wall, preserving aspect ratio, all at same height and evenly spaced and centered as a group
+                    const leftWallImages = [
+                        { 
+                            file: '/art/5.jpg', 
+                            title: 'The Starry Night', 
+                            artist: 'Vincent van Gogh', 
+                            year: '1889', 
+                            description: 'A masterpiece of Post-Impressionism depicting a swirling night sky over a peaceful village. Van Gogh\'s expressive brushwork and vibrant colors create a sense of movement and emotion that transcends the ordinary landscape.' 
+                        },
+                        { 
+                            file: '/art/6.jpg', 
+                            title: 'Mona Lisa', 
+                            artist: 'Leonardo da Vinci', 
+                            year: '1503-1519', 
+                            description: 'The world\'s most famous portrait, known for the subject\'s enigmatic smile and Leonardo\'s revolutionary sfumato technique. This Renaissance masterpiece continues to captivate viewers with its mysterious beauty and technical perfection.' 
+                        },
+                        { 
+                            file: '/art/7.jpg', 
+                            title: 'The Persistence of Memory', 
+                            artist: 'Salvador Dalí', 
+                            year: '1931', 
+                            description: 'A surrealist icon featuring melting clocks draped over a barren landscape. Dalí\'s exploration of time, memory, and the subconscious mind creates a dreamlike atmosphere that challenges our perception of reality.' 
+                        },
+                        { 
+                            file: '/art/1.webp', 
+                            title: 'The Scream', 
+                            artist: 'Edvard Munch', 
+                            year: '1893', 
+                            description: 'A powerful expressionist work capturing the anxiety and existential dread of modern life. The figure\'s anguished expression against a swirling, colorful sky has become a universal symbol of human emotion and psychological turmoil.' 
+                        }
+                    ];     
