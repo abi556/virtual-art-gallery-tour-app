@@ -405,4 +405,48 @@ class VirtualArtGallery {
                 glb: '/models/sculpture_bust_of_roza_loewenfeld.glb'
             }
         ];
+    pedestalData.forEach((ped, i) => {
+            // Pedestal (rectangular cube)
+            const pedestalGeo = new THREE.BoxGeometry(2, 2, 2);
+            const pedestalMat = new THREE.MeshLambertMaterial({ color: ped.color });
+            const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
+            pedestal.position.set(...ped.pos);
+            pedestal.castShadow = true;
+            pedestal.receiveShadow = true;
+            this.scene.add(pedestal);
 
+            let sculptureObject = null;
+            // Only add art object if it's a Three.js art or a GLB
+            if (ped.artType) {
+                let artGeo, artMat;
+                if (ped.artType === 'torusKnot') {
+                    artGeo = new THREE.TorusKnotGeometry(1, 0.35, 128, 16);
+                } else if (ped.artType === 'dodecahedron') {
+                    artGeo = new THREE.DodecahedronGeometry(1.1);
+                } else if (ped.artType === 'icosahedron') {
+                    artGeo = new THREE.IcosahedronGeometry(1.1, 1);
+                } else {
+                    artGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+                }
+                artMat = new THREE.MeshPhysicalMaterial({
+                    color: ped.artColor,
+                    roughness: 0.25,
+                    metalness: 0.7,
+                    clearcoat: 0.5,
+                    clearcoatRoughness: 0.15,
+                    reflectivity: 0.6,
+                    sheen: 1.0,
+                    sheenColor: new THREE.Color(0xffffff)
+                });
+                const artObj = new THREE.Mesh(artGeo, artMat);
+                artObj.position.set(ped.pos[0], ped.pos[1] + 1.7, ped.pos[2]);
+                artObj.castShadow = true;
+                artObj.receiveShadow = true;
+                artObj.userData.isSculpture = true;
+                artObj.userData.title = ped.title;
+                artObj.userData.artist = ped.artist;
+                artObj.userData.year = ped.year;
+                artObj.userData.description = ped.description;
+                this.scene.add(artObj);
+                this.sculptures.push(artObj);
+                sculptureObject = artObj;
