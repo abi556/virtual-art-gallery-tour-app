@@ -242,7 +242,8 @@ This project demonstrates understanding of:
 
 ## 📄 License
 
-This project is developed for educational purposes as part of the Computer Graphics course at Addis Ababa University.
+This project is developed for educational purposes as part of the Computer Graphics course at 
+Software Engineering depratmet under School of Information Technology Engineering (SiTE), College of Technology and Built Environment, Addis Ababa University.
 
 ## 📞 Support
 
