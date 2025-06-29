@@ -197,5 +197,212 @@ class VirtualArtGallery {
         return texture;
     }
 
-// Initialize the application
-const gallery = new VirtualArtGallery();
+    createArtPieces() {
+        const depth = 30;
+        const wallZ = -depth / 2 + 0.1; // Slightly in front of the wall
+        const wallY = 4;
+        const gltfLoader = new GLTFLoader();
+        const artData = [
+            {
+                title: "Madonna and the Sacred Chalice",
+                artist: "Inspired by 19th Century European Religious Art",
+                year: "c. 1800s",
+                description: "A serene depiction of the Madonna in prayer, flanked by angels and sacred vessels, symbolizing purity and devotion.",
+                position: [-12, wallY, wallZ],
+                image: "/art/1.jpg"
+            },
+            {
+                title: "Ethiopian Last Supper",
+                artist: "Traditional Ethiopian Iconography",
+                year: "c. 1900s",
+                description: "A vibrant Ethiopian icon showing Christ and his disciples at the Last Supper, rendered in bold colors and stylized forms.",
+                position: [-4, wallY, wallZ],
+                image: "/art/2.jpg"
+            },
+            {
+                title: "Portrait of a Renaissance Nobleman",
+                artist: "After Raphael",
+                year: "c. 1500s",
+                description: "A detailed Renaissance portrait of a nobleman in luxurious red and gold attire, exuding power and confidence.",
+                position: [4, wallY, wallZ],
+                image: "/art/3.png"
+            },
+            {
+                title: "Baroque Gentleman in Black and Gold",
+                artist: "Circle of Van Dyck",
+                year: "c. 1600s",
+                description: "A Baroque-era portrait of a gentleman in black and gold, with a contemplative gaze and elaborate costume.",
+                position: [12, wallY, wallZ],
+                image: "/art/4.jpg"
+            },
+            {
+                title: "Napoleon Crossing the Alps",
+                artist: "Jacques-Louis David",
+                year: "1801",
+                description: "One of the most iconic portraits of Napoleon Bonaparte, this neoclassical masterpiece by Jacques-Louis David depicts the French leader heroically crossing the Alps on a rearing horse. The dramatic pose, flowing red cloak, and stormy landscape emphasize Napoleon's power, determination, and legendary status as a military leader.",
+                position: [-8, wallY, depth / 2 - 0.1], // left of the door, front wall, same distance as metal sculpture
+                image: "/art/10.jpg"
+            }
+        ];
+
+        const textureLoader = new THREE.TextureLoader();
+
+        artData.forEach(art => {
+            const geometry = new THREE.PlaneGeometry(2, 3);
+            let material;
+            if (art.image) {
+                // Add debug logging for Napoleon painting
+                if (art.title === "Napoleon Crossing the Alps") {
+                    const texture = textureLoader.load(
+                        art.image,
+                        () => { console.log('Napoleon image loaded successfully:', art.image); },
+                        undefined,
+                        (err) => { console.error('Error loading Napoleon image:', art.image, err); }
+                    );
+                    material = new THREE.MeshLambertMaterial({ map: texture, side: THREE.DoubleSide });
+                } else {
+                    const texture = textureLoader.load(art.image);
+                    material = new THREE.MeshLambertMaterial({ map: texture, side: THREE.DoubleSide });
+                }
+            } else {
+                material = new THREE.MeshLambertMaterial({ color: art.color || 0xffffff, side: THREE.DoubleSide });
+            }
+            // Frame: thin box, slightly larger than painting
+            const frameWidth = 2.2;
+            const frameHeight = 3.2;
+            const frameDepth = 0.12;
+            const frameColor = 0x8d6748; // warm wood color
+            const frameGeo = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
+            const frameMat = new THREE.MeshPhysicalMaterial({
+                color: frameColor,
+                roughness: 0.4,
+                metalness: 0.3,
+                clearcoat: 0.2,
+                reflectivity: 0.2
+            });
+            const frame = new THREE.Mesh(frameGeo, frameMat);
+            // Offset for wall normal
+            let offset = new THREE.Vector3(0, 0, 0);
+            const pos = art.position;
+            let framePos = [pos[0], pos[1], pos[2]];
+            let paintingPos = [pos[0], pos[1], pos[2]];
+            if (Math.abs(pos[2]) > Math.abs(pos[0])) {
+                // Back or front wall
+                if (pos[2] < 0) {
+                    // Back wall
+                    framePos[2] = pos[2] + frameDepth / 2;
+                    paintingPos[2] = pos[2] + frameDepth / 2 + 0.001;
+                } else {
+                    // Front wall
+                    framePos[2] = pos[2] - frameDepth / 2;
+                    paintingPos[2] = pos[2] - frameDepth / 2 - 0.001;
+                }
+            } else {
+                // Left or right wall
+                if (pos[0] < 0) {
+                    // Left wall
+                    framePos[0] = pos[0] + frameDepth / 2;
+                    paintingPos[0] = pos[0] + frameDepth / 2 + 0.001;
+                } else {
+                    // Right wall
+                    framePos[0] = pos[0] - frameDepth / 2;
+                    paintingPos[0] = pos[0] - frameDepth / 2 - 0.001;
+                }
+            }
+            // Frame position (centered on wall)
+            frame.position.set(pos[0] + offset.x, pos[1] + offset.y, pos[2] + offset.z);
+            frame.castShadow = true;
+            frame.receiveShadow = true;
+            this.scene.add(frame);
+            // Painting position (slightly in front of frame)
+            let paintingOffset = offset.clone();
+            if (Math.abs(pos[2]) > Math.abs(pos[0])) {
+                // Back or front wall
+                if (pos[2] < 0) {
+                    paintingOffset = new THREE.Vector3(0, 0, 0.07); // back wall
+                } else {
+                    // front wall (Napoleon painting and others)
+                    paintingOffset = new THREE.Vector3(0, 0, -0.1); // much larger gap for front wall
+                }
+            } else {
+                // Left or right wall
+                paintingOffset = pos[0] < 0 ? new THREE.Vector3(0.07, 0, 0) : new THREE.Vector3(-0.07, 0, 0);
+            }
+            const artPiece = new THREE.Mesh(geometry, material);
+            artPiece.position.set(pos[0] + paintingOffset.x, pos[1] + paintingOffset.y, pos[2] + paintingOffset.z);
+            // Rotate painting to face into the room if on the front wall
+            if (pos[2] > 0 && Math.abs(pos[2]) > Math.abs(pos[0])) {
+                artPiece.rotation.y = Math.PI;
+            }
+            artPiece.castShadow = true;
+            artPiece.receiveShadow = true;
+            artPiece.userData = art;
+            this.scene.add(artPiece);
+            this.artPieces.push(artPiece);
+        });
+
+        // --- Add 3D art objects on pedestals ---
+        this.sculptures = [];
+        const pedestalData = [
+            {
+                pos: [-10, 1, 0],
+                color: 0xffffff,
+                artType: 'torusKnot',
+                artColor: 0x8e44ad,
+                title: "Infinity Loop",
+                artist: "Contemporary Abstract",
+                year: "2022",
+                description: "A mesmerizing torus knot sculpture symbolizing infinity and the interconnectedness of all things. Its metallic purple sheen evokes a sense of modern elegance."
+            },
+            {
+                pos: [0, 1, 8],
+                color: 0xffffff,
+                artType: 'dodecahedron',
+                artColor: 0xe67e22,
+                title: "Platonic Harmony",
+                artist: "Geometric Modernist",
+                year: "2021",
+                description: "A bold dodecahedron sculpture representing mathematical beauty and harmony. The vibrant orange finish highlights its geometric perfection."
+            },
+            {
+                pos: [10, 1, -5],
+                color: 0xffffff,
+                artType: 'icosahedron',
+                artColor: 0x16a085,
+                title: "Crystal Form",
+                artist: "Futurist Studio",
+                year: "2023",
+                description: "A teal icosahedron sculpture inspired by natural crystal structures, blending futuristic design with organic symmetry."
+            },
+            // Golden Sculpture
+            {
+                pos: [-8, 1, 10],
+                color: 0xffffff,
+                title: "Emblem of 'The Golden Head' Pharmacy in Kraków",
+                artist: "Unknown",
+                year: "18th Century (approx.)",
+                description: "This sculpture is a digital replica of the emblem from the historic 'Golden Head' pharmacy in Kraków, Poland. The original emblem is a symbol of the city's rich medical and cultural heritage, and has adorned the pharmacy since the 18th century.",
+                glb: '/models/golden_sculpture.glb'
+            },
+            // The Thinker
+            {
+                pos: [7, 1, -10],
+                color: 0xffffff,
+                title: "The Thinker (Replica)",
+                artist: "After Auguste Rodin",
+                year: "1902 (Replica)",
+                description: "A faithful replica of Rodin's iconic sculpture, symbolizing deep contemplation and the power of human thought.",
+                glb: '/models/the_thinker_by_auguste_rodin.glb'
+            },
+            // Empty Stand 3 (now with Roza Loewenfeld bust)
+            {
+                pos: [13, 1, 7],
+                color: 0xffffff,
+                title: "Bust of Roza Loewenfeld",
+                artist: "Unknown",
+                year: "19th Century",
+                description: "A digital replica of the sculpture bust of Roza Loewenfeld, capturing the dignified features and artistic style of the 19th century.",
+                glb: '/models/sculpture_bust_of_roza_loewenfeld.glb'
+            }
+        ];
+
