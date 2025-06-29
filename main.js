@@ -1392,5 +1392,28 @@ class VirtualArtGallery {
         });
     }
 
+    animateCameraTo(targetPos, lookAt) {
+        // Simple linear interpolation for camera movement
+        const duration = 1000; // ms
+        const start = { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z };
+        const end = targetPos;
+        const startTime = performance.now();
+        const animate = (now) => {
+            const elapsed = now - startTime;
+            const t = Math.min(elapsed / duration, 1);
+            this.camera.position.x = start.x + (end.x - start.x) * t;
+            this.camera.position.y = start.y + (end.y - start.y) * t;
+            this.camera.position.z = start.z + (end.z - start.z) * t;
+            this.camera.lookAt(lookAt.x, lookAt.y, lookAt.z);
+            if (t < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                this.controls.target.set(lookAt.x, lookAt.y, lookAt.z);
+                this.controls.update();
+            }
+        };
+        requestAnimationFrame(animate);
+    }
+
 
 }
