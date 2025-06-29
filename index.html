@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Art Gallery Tour</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Screen -->
+        <div id="loading-screen">
+            <div class="loading-content">
+                <h1>Virtual Art Gallery</h1>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+                <p>Loading gallery...</p>
+            </div>
+        </div>
+
+        <!-- Main Canvas Container -->
+        <div id="canvas-container"></div>
+
+        <!-- UI Overlay -->
+        <div id="ui-overlay">
+            <!-- Navigation Controls -->
+            <div id="controls">
+                <button id="reset-camera">Reset View</button>
+                <div id="wall-nav">
+                    <button id="nav-back">View Back Wall</button>
+                    <button id="nav-front">View Front Wall</button>
+                    <button id="nav-left">View Left Wall</button>
+                    <button id="nav-right">View Right Wall</button>
+                </div>
+            </div>
+
+            <!-- Art Piece Info Panel -->
+            <div id="art-info" class="hidden">
+                <div class="info-header">
+                    <h3 id="art-title">Art Piece Title</h3>
+                    <button id="close-info">×</button>
+                </div>
+                <div class="info-content">
+                    <p id="art-description">Description will appear here...</p>
+                    <p id="art-artist">Artist: Unknown</p>
+                    <p id="art-year">Year: Unknown</p>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div id="instructions">
+                <h3>Controls</h3>
+                <p>🖱️ Mouse: Rotate camera</p>
+                <p>🔍 Scroll: Zoom in/out</p>
+                <p>🖱️ Click: Select art pieces</p>
+                <p>⌨️ WASD: Move camera</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html> 
