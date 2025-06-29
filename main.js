@@ -459,4 +459,18 @@ class VirtualArtGallery {
             } else if (ped.glb) {
                 gltfLoader.load(ped.glb, (gltf) => {
                     const model = gltf.scene;
-                    
+                      // Center and scale the model
+                                        const box = new THREE.Box3().setFromObject(model);
+                                        const size = new THREE.Vector3();
+                                        box.getSize(size);
+                                        const maxDim = Math.max(size.x, size.y, size.z);
+                                        let scale = 1.2 / maxDim;
+                                        // If this is the golden sculpture, The Thinker, or Roza Loewenfeld, scale it 2x
+                                        if (
+                                            ped.title === "Emblem of 'The Golden Head' Pharmacy in Kraków" ||
+                                            ped.title === "The Thinker (Replica)" ||
+                                            ped.title === "Bust of Roza Loewenfeld"
+                                        ) {
+                                            scale *= 2;
+                                        }
+                                        model.scale.set(scale, scale, scale);
