@@ -1479,3 +1479,6 @@ class VirtualArtGallery {
     }
 
 }
+// Initialize the application
+const gallery = new VirtualArtGallery();
+ 
