@@ -1196,3 +1196,44 @@ class VirtualArtGallery {
             }
         }
     }
+    showArtInfo(artData) {
+        document.getElementById('art-title').textContent = artData.title;
+        document.getElementById('art-description').textContent = artData.description;
+        document.getElementById('art-artist').textContent = `Artist: ${artData.artist}`;
+        document.getElementById('art-year').textContent = `Year: ${artData.year}`;
+        
+        const artInfo = document.getElementById('art-info');
+        artInfo.classList.remove('hidden');
+    }
+
+    hideArtInfo() {
+        const artInfo = document.getElementById('art-info');
+        artInfo.classList.add('hidden');
+    }
+
+    animate() {
+        this.animationId = requestAnimationFrame(() => this.animate());
+        this.handleMovement();
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    handleMovement() {
+        // WASD movement relative to camera orientation
+        const dir = new THREE.Vector3();
+        this.camera.getWorldDirection(dir);
+        dir.y = 0; // Lock movement to XZ plane
+        dir.normalize();
+        const right = new THREE.Vector3().crossVectors(dir, this.camera.up).normalize();
+        let move = new THREE.Vector3();
+        if (this.moveState.forward) move.add(dir);
+        if (this.moveState.backward) move.sub(dir);
+        if (this.moveState.left) move.sub(right);
+        if (this.moveState.right) move.add(right);
+        if (move.lengthSq() > 0) {
+            move.normalize().multiplyScalar(this.moveSpeed);
+            this.camera.position.add(move);
+            this.controls.target.add(move);
+        }
+    }
+}
