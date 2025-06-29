@@ -945,3 +945,254 @@ class VirtualArtGallery {
                 rotY: 0 // face into the room
             }
         ];
+        wallSculptures.forEach((sculpt) => {
+            gltfLoader.load(sculpt.glb, (gltf) => {
+                const model = gltf.scene;
+                // Scale and center the model
+                const box = new THREE.Box3().setFromObject(model);
+                const size = new THREE.Vector3();
+                box.getSize(size);
+                let scale = 4 / size.x; // Scale up more for visibility
+                model.scale.set(scale, scale, scale);
+                // Center the model on the wall
+                const center = new THREE.Vector3();
+                box.getCenter(center);
+                // For Baroque Faun, align the back of the model to the wall (z=15)
+                if (sculpt.title === 'Baroque Faun Sculpture') {
+                    // Recompute bounding box after scaling
+                    model.updateMatrixWorld(true);
+                    const scaledBox = new THREE.Box3().setFromObject(model);
+                    const boxCenter = new THREE.Vector3();
+                    scaledBox.getCenter(boxCenter);
+                    const maxZ = scaledBox.max.z;
+                    const wallZ = 15;
+                    // Set position so center x/y matches config, and back is flush with wall
+                    model.position.x += (sculpt.pos[0] - boxCenter.x);
+                    model.position.y += (sculpt.pos[1] - boxCenter.y);
+                    model.position.z += (wallZ - maxZ);
+                    // Manual z-offset to bring it inside the room
+                    model.position.z += 3;
+                } else {
+                    model.position.set(
+                        sculpt.pos[0] - center.x * scale,
+                        sculpt.pos[1] - center.y * scale,
+                        sculpt.pos[2] - center.z * scale
+                    );
+                }
+                model.rotation.y = sculpt.rotY;
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        if (sculpt.title === 'Metal Sculpture (Buddhist Temple)') {
+                            child.material = new THREE.MeshStandardMaterial({
+                                color: 0x8c7853, // classic bronze
+                                metalness: 0.85,
+                                roughness: 0.45
+                            });
+                            child.visible = true;
+                            child.material.opacity = 1;
+                            child.material.transparent = false;
+                        }
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        child.userData = {
+                            isSculpture: true,
+                            title: sculpt.title,
+                            artist: sculpt.artist,
+                            year: sculpt.year,
+                            description: sculpt.description
+                        };
+                    }
+                });
+                this.scene.add(model);
+                this.sculptures.push(model);
+                // Add multiple point lights around the wall sculpture for full visibility
+                if (sculpt.title === 'Metal Sculpture (Buddhist Temple)') {
+                    const lightPositions = [
+                        { x: sculpt.pos[0],     y: sculpt.pos[1] + 2, z: sculpt.pos[2] },      // above
+                        { x: sculpt.pos[0],     y: sculpt.pos[1] - 2, z: sculpt.pos[2] },      // below
+                        { x: sculpt.pos[0] + 2, y: sculpt.pos[1],     z: sculpt.pos[2] },      // right
+                        { x: sculpt.pos[0] - 2, y: sculpt.pos[1],     z: sculpt.pos[2] },      // left
+                        { x: sculpt.pos[0],     y: sculpt.pos[1],     z: sculpt.pos[2] + 2 },  // front
+                        { x: sculpt.pos[0],     y: sculpt.pos[1],     z: sculpt.pos[2] - 2 }   // back
+                    ];
+                    lightPositions.forEach(pos => {
+                        const pt = new THREE.PointLight(0xffffff, 1.0, 6);
+                        pt.position.set(pos.x, pos.y, pos.z);
+                        pt.castShadow = false;
+                        this.scene.add(pt);
+                    });
+                    // Add ambient and directional light for the metal sculpture
+                    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+                    this.scene.add(ambient);
+                    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                    dirLight.position.set(sculpt.pos[0], sculpt.pos[1] + 8, sculpt.pos[2] + 5);
+                    dirLight.target.position.set(sculpt.pos[0], sculpt.pos[1], sculpt.pos[2]);
+                    this.scene.add(dirLight);
+                    this.scene.add(dirLight.target);
+                } else {
+                    // Add a point light above each wall sculpture (default)
+                    const pt = new THREE.PointLight(0xffffff, 1.0, 6);
+                    pt.position.set(sculpt.pos[0], sculpt.pos[1] + 2, sculpt.pos[2] - 0.5);
+                    pt.castShadow = false;
+                    this.scene.add(pt);
+                }
+            });
+        });
+    }
+
+    setupEventListeners() {
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+
+        window.addEventListener('mousemove', (event) => {
+            this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            this.handleMouseMove();
+        });
+
+        window.addEventListener('click', (event) => {
+            this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            this.handleClick();
+        });
+
+        window.addEventListener('resize', () => {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('keydown', (event) => {
+            switch (event.code) {
+                case 'KeyW': this.moveState.forward = true; break;
+                case 'KeyS': this.moveState.backward = true; break;
+                case 'KeyA': this.moveState.left = true; break;
+                case 'KeyD': this.moveState.right = true; break;
+            }
+        });
+        window.addEventListener('keyup', (event) => {
+            switch (event.code) {
+                case 'KeyW': this.moveState.forward = false; break;
+                case 'KeyS': this.moveState.backward = false; break;
+                case 'KeyA': this.moveState.left = false; break;
+                case 'KeyD': this.moveState.right = false; break;
+            }
+        });
+    }
+
+    setupUI() {
+        document.getElementById('reset-camera').addEventListener('click', () => {
+            this.camera.position.set(0, 5, 10);
+            this.controls.reset();
+        });
+
+        document.getElementById('close-info').addEventListener('click', () => {
+            this.hideArtInfo();
+        });
+
+        // Add navigation button listeners
+        const navIds = [
+            { id: 'nav-back', target: 0 },
+            { id: 'nav-front', target: 1 },
+            { id: 'nav-left', target: 2 },
+            { id: 'nav-right', target: 3 }
+        ];
+        navIds.forEach(nav => {
+            const btn = document.getElementById(nav.id);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const target = this.arrowTargets[nav.target];
+                    this.animateCameraTo(target.position, target.lookAt);
+                });
+            }
+        });
+    }
+
+    handleMouseMove() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        // Get all objects in the scene for better door detection
+        const allObjects = [];
+        this.scene.traverse((object) => {
+            if (object.isMesh && (object.userData.title || object.userData.isDoor || object.userData.isSculpture)) {
+                allObjects.push(object);
+            }
+        });
+        const intersects = this.raycaster.intersectObjects(allObjects);
+
+        // Only reset scale for art pieces
+        this.artPieces.forEach(piece => {
+            piece.scale.set(1, 1, 1);
+        });
+
+        if (intersects.length > 0) {
+            const hovered = intersects[0].object;
+            // Only scale art pieces, not the door
+            if (!hovered.userData.isDoor) {
+                hovered.scale.set(1.05, 1.05, 1.05);
+            }
+            document.body.style.cursor = 'pointer';
+        } else {
+            document.body.style.cursor = 'default';
+        }
+    }
+
+    handleClick() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        // Get all objects in the scene for better door detection
+        const allObjects = [];
+        this.scene.traverse((object) => {
+            if (object.isMesh && (object.userData.title || object.userData.isDoor || object.userData.isSculpture)) {
+                allObjects.push(object);
+            }
+        });
+        const intersects = this.raycaster.intersectObjects(allObjects);
+
+        if (intersects.length > 0) {
+            const clicked = intersects[0].object;
+            if (clicked.userData && clicked.userData.isDoor) {
+                // Animate camera to a close-up view of the door
+                const objPos = clicked.getWorldPosition(new THREE.Vector3());
+                const cameraOffset = new THREE.Vector3(0, 0, 6); // 6 units in front
+                const closePos = objPos.clone().add(cameraOffset);
+                this.animateCameraTo(closePos, objPos);
+                this.showArtInfo(clicked.userData);
+            } else if (clicked.userData && clicked.userData.isSculpture) {
+                // Animate camera to a close-up view of the sculpture
+                // For GLB models, find the root sculpture object
+                let rootSculpture = clicked;
+                for (const s of this.sculptures) {
+                    if (s.isMesh) {
+                        if (s === clicked) { rootSculpture = s; break; }
+                    } else if (s.isObject3D && s.children && s.children.length > 0) {
+                        if (s.getObjectById(clicked.id)) { rootSculpture = s; break; }
+                    }
+                }
+                const objPos = rootSculpture.getWorldPosition(new THREE.Vector3());
+                const camDir = new THREE.Vector3().subVectors(this.camera.position, objPos).normalize();
+                let distance = 3;
+                if (clicked.userData && clicked.userData.title === "The Thinker (Replica)") {
+                    distance = 5; // Move further for The Thinker
+                }
+                const closePos = objPos.clone().add(camDir.multiplyScalar(distance));
+                this.animateCameraTo(closePos, objPos);
+                this.showArtInfo(clicked.userData);
+            } else {
+                // Animate camera to a close-up view of the painting
+                const objPos = clicked.position;
+                // For paintings, move the camera 3 units in front of the painting (along the normal)
+                // Assume paintings are always facing +z (back wall), so normal is (0,0,1)
+                let normal = new THREE.Vector3(0, 0, 1);
+                // If the painting is on the back wall (z < 0), normal should be (0,0,1)
+                // If on the front wall (z > 0), normal should be (0,0,-1)
+                if (Math.abs(objPos.z) > Math.abs(objPos.x)) {
+                    normal = objPos.z < 0 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 0, -1);
+                } else {
+                    // If on left/right wall, normal is along x
+                    normal = objPos.x < 0 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(-1, 0, 0);
+                }
+                const closePos = objPos.clone().add(normal.multiplyScalar(3));
+                this.animateCameraTo(closePos, objPos);
+                this.showArtInfo(clicked.userData);
+            }
+        }
+    }
