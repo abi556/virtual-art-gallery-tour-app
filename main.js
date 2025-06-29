@@ -1236,4 +1236,161 @@ class VirtualArtGallery {
             this.controls.target.add(move);
         }
     }
+    
+    createWalls(width = 40, depth = 30) {
+        // Generate a rough noise texture for greish white walls
+        const wallTexture = this.createRoughTexture(512, 128, '#e0e0e0', '#b0b0b0');
+        wallTexture.wrapS = THREE.RepeatWrapping;
+        wallTexture.wrapT = THREE.RepeatWrapping;
+        wallTexture.repeat.set(4, 1);
+        const wallMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xe0e0e0, // greish white
+            map: wallTexture,
+            side: THREE.DoubleSide
+        });
+        const wallHeight = 8;
+        // Back Wall
+        const backWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(width, wallHeight),
+            wallMaterial
+        );
+        backWall.position.set(0, wallHeight / 2, -depth / 2);
+        backWall.receiveShadow = true;
+        this.scene.add(backWall);
+
+        // Front Wall - Create doorway opening for the door
+        const doorWidth = 6; // Width of the door opening (reduced to 6 units)
+        const doorPosition = 0; // Door is centered at x=0
+        
+        // Left segment of front wall
+        const frontWallLeft = new THREE.Mesh(
+            new THREE.PlaneGeometry((width - doorWidth) / 2, wallHeight),
+            wallMaterial
+        );
+        frontWallLeft.position.set(-(width + doorWidth) / 4, wallHeight / 2, depth / 2);
+        frontWallLeft.rotation.y = Math.PI;
+        frontWallLeft.receiveShadow = true;
+        this.scene.add(frontWallLeft);
+        
+        // Right segment of front wall
+        const frontWallRight = new THREE.Mesh(
+            new THREE.PlaneGeometry((width - doorWidth) / 2, wallHeight),
+            wallMaterial
+        );
+        frontWallRight.position.set((width + doorWidth) / 4, wallHeight / 2, depth / 2);
+        frontWallRight.rotation.y = Math.PI;
+        frontWallRight.receiveShadow = true;
+        this.scene.add(frontWallRight);
+
+        // Left Wall
+        const leftWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(depth, wallHeight),
+            wallMaterial
+        );
+        leftWall.position.set(-width / 2, wallHeight / 2, 0);
+        leftWall.rotation.y = Math.PI / 2;
+        leftWall.receiveShadow = true;
+        this.scene.add(leftWall);
+
+        // Right Wall
+        const rightWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(depth, wallHeight),
+            wallMaterial
+        );
+        rightWall.position.set(width / 2, wallHeight / 2, 0);
+        rightWall.rotation.y = -Math.PI / 2;
+        rightWall.receiveShadow = true;
+        this.scene.add(rightWall);
+    }
+
+    createRoughTexture(width, height, color1, color2) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        // Fill with base color
+        ctx.fillStyle = color1;
+        ctx.fillRect(0, 0, width, height);
+        // Add random noise
+        for (let i = 0; i < 10000; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            ctx.fillStyle = Math.random() > 0.5 ? color2 : color1;
+            ctx.globalAlpha = 0.15 + Math.random() * 0.15;
+            ctx.beginPath();
+            ctx.arc(x, y, Math.random() * 2 + 1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    createDecorations() {
+        // Modern dark ceiling
+        const width = 40;
+        const depth = 30;
+        const ceilingY = 8;
+        const ceilingGeometry = new THREE.PlaneGeometry(width, depth);
+        const ceilingMaterial = new THREE.MeshStandardMaterial({ color: 0x181818, roughness: 0.7, metalness: 0.2 });
+        const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+        ceiling.position.set(0, ceilingY, 0);
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.receiveShadow = false;
+        this.scene.add(ceiling);
+
+        // LED light strips (emissive white boxes)
+        const ledStrips = [
+            // Center
+            { x: 0, z: 0, w: 8, d: 0.4 },
+            // Horizontal rows
+            { x: 0, z: -8, w: 8, d: 0.4 },
+            { x: 0, z: 8, w: 8, d: 0.4 },
+            // Vertical columns
+            { x: -8, z: 0, w: 0.4, d: 8 },
+            { x: 8, z: 0, w: 0.4, d: 8 },
+            // Corners
+            { x: -8, z: -8, w: 4, d: 0.4 },
+            { x: 8, z: -8, w: 4, d: 0.4 },
+            { x: -8, z: 8, w: 4, d: 0.4 },
+            { x: 8, z: 8, w: 4, d: 0.4 },
+            // More strips for effect
+            { x: -12, z: 0, w: 4, d: 0.4 },
+            { x: 12, z: 0, w: 4, d: 0.4 },
+            { x: 0, z: -12, w: 4, d: 0.4 },
+            { x: 0, z: 12, w: 4, d: 0.4 }
+        ];
+        ledStrips.forEach(strip => {
+            const geo = new THREE.BoxGeometry(strip.w, 0.1, strip.d);
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xffffff,
+                emissiveIntensity: 2,
+                metalness: 0.1,
+                roughness: 0.2
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(strip.x, ceilingY - 0.05, strip.z);
+            mesh.castShadow = false;
+            mesh.receiveShadow = false;
+            this.scene.add(mesh);
+        });
+
+        // Add a few real lights for effect
+        [
+            { x: 0, z: 0 },
+            { x: -8, z: -8 },
+            { x: 8, z: 8 },
+            { x: -8, z: 8 },
+            { x: 8, z: -8 }
+        ].forEach(pos => {
+            const light = new THREE.PointLight(0xffffff, 0.7, 30);
+            light.position.set(pos.x, ceilingY - 0.1, pos.z);
+            light.castShadow = false;
+            this.scene.add(light);
+        });
+    }
+
+
 }
