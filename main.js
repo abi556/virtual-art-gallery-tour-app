@@ -495,4 +495,70 @@ class VirtualArtGallery {
                             ped.pos[1] + 2.1 - center.y * scale,
                             ped.pos[2] - center.z * scale
                         );
-                    }                                        
+                    }  
+                    // Only apply debug material to The Thinker
+                                        model.traverse((child) => {
+                                            if (child.isMesh) {
+                                                if (ped.title === "The Thinker (Replica)") {
+                                                    child.material = new THREE.MeshStandardMaterial({ color: 0x888888 });
+                                                    child.visible = true;
+                                                    child.material.opacity = 1;
+                                                    child.material.transparent = false;
+                                                }
+                                                if (ped.title === "Emblem of 'The Golden Head' Pharmacy in Kraków") {
+                                                    child.material = new THREE.MeshStandardMaterial({
+                                                        color: 0xffd700, // gold
+                                                        metalness: 1,
+                                                        roughness: 0.3
+                                                    });
+                                                    child.visible = true;
+                                                    child.material.opacity = 1;
+                                                    child.material.transparent = false;
+                                                    setTimeout(() => {
+                                                        if (!child.material || !child.material.isMeshStandardMaterial || !child.visible) {
+                                                            child.material = new THREE.MeshNormalMaterial();
+                                                            child.visible = true;
+                                                        }
+                                                    }, 100);
+                                                }
+                                                child.castShadow = true;
+                                                child.receiveShadow = true;
+                                                child.userData = {
+                                                    isSculpture: true,
+                                                    title: ped.title,
+                                                    artist: ped.artist,
+                                                    year: ped.year,
+                                                    description: ped.description
+                                                };
+                                            }
+                                        });
+                                        if (ped.title === "Golden Sculpture") {
+                                            console.log('Golden Sculpture model added to scene:', model);
+                                        }
+                                        this.scene.add(model);
+                                        this.sculptures.push(model);
+                                        sculptureObject = model;
+                                        // Add a spotlight above the GLB sculpture
+                                        const spot = new THREE.SpotLight(0xffffff, 1.2, 10, Math.PI / 6, 0.3, 1);
+                                        spot.position.set(ped.pos[0], ped.pos[1] + 7, ped.pos[2]);
+                                        spot.target = model;
+                                        spot.castShadow = true;
+                                        this.scene.add(spot);
+                                        // Add 4 point lights around the GLB sculpture
+                                        const pointLightPositions = [
+                                            { x: ped.pos[0],     y: ped.pos[1] + 4, z: ped.pos[2] },      // above
+                                            { x: ped.pos[0] + 2, y: ped.pos[1] + 2, z: ped.pos[2] },      // right
+                                            { x: ped.pos[0] - 2, y: ped.pos[1] + 2, z: ped.pos[2] },      // left
+                                            { x: ped.pos[0],     y: ped.pos[1] + 2, z: ped.pos[2] + 2 }   // front
+                                        ];
+                                        pointLightPositions.forEach(pos => {
+                                            const pt = new THREE.PointLight(0xffffff, 0.7, 6);
+                                            pt.position.set(pos.x, pos.y, pos.z);
+                                            pt.castShadow = false;
+                                            this.scene.add(pt);
+                                        });
+                                    });
+                                }
+                                // No art object for the other stand (leave empty)
+                            });
+                            
