@@ -834,3 +834,114 @@ class VirtualArtGallery {
                 this.scene.add(wallLight);
             });
         };
+
+        // Load and position the door on the front wall
+        const doorPath = '/models/door.glb';
+        const width = 40;
+        const frontWallZ = depth / 2; // Front wall position (15)
+        const wallHeight = 8; // Ceiling height
+        const floorY = 0;
+        
+        // Create wall material for door segments
+        const wallTexture = this.createRoughTexture(512, 128, '#e0e0e0', '#b0b0b0');
+        wallTexture.wrapS = THREE.RepeatWrapping;
+        wallTexture.wrapT = THREE.RepeatWrapping;
+        wallTexture.repeat.set(4, 1);
+        const wallMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xe0e0e0, // greish white
+            map: wallTexture,
+            side: THREE.DoubleSide
+        });
+        
+        gltfLoader.load(doorPath, (gltf) => {
+            const door = gltf.scene;
+            // Store reference to door and add metadata
+            this.door = door;
+            door.userData = {
+                title: "Grand Entrance Door",
+                artist: "Architectural Design",
+                year: "2024",
+                description: "A magnificent entrance door crafted with precision and elegance. This architectural masterpiece serves as the gateway to our virtual art gallery, featuring intricate details and a timeless design that welcomes visitors into the world of artistic wonder.",
+                isDoor: true
+            };
+            
+            // Ensure door is properly positioned and scaled
+            // Compute door bounding box
+            const box = new THREE.Box3().setFromObject(door);
+            const doorMinY = box.min.y;
+            const doorMaxY = box.max.y;
+            const doorHeight = doorMaxY - doorMinY;
+            const scale = (wallHeight / doorHeight) * 1.10; // 10% overscale
+            door.scale.set(scale, scale, scale);
+            
+            // Position the door properly on the front wall
+            door.position.set(0, floorY + wallHeight / 2, frontWallZ - 0.1); // Slightly in front of wall
+            
+            // Make all door meshes clickable
+            door.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    // Copy userData to each mesh for click detection
+                    child.userData = { ...door.userData };
+                }
+            });
+            this.scene.add(door);
+
+            const doorWidth = 6; // reduced width for a smaller doorway
+            const scaledDoorHeight = doorHeight * scale;
+            
+            // Left segment (beside door)
+            const frontWallLeft = new THREE.Mesh(
+                new THREE.PlaneGeometry((width - doorWidth) / 2, scaledDoorHeight),
+                wallMaterial
+            );
+            frontWallLeft.position.set(-(width + doorWidth) / 4, floorY + scaledDoorHeight / 2, frontWallZ);
+            frontWallLeft.rotation.y = Math.PI;
+            frontWallLeft.receiveShadow = true;
+            this.scene.add(frontWallLeft);
+            
+            // Right segment (beside door)
+            const frontWallRight = new THREE.Mesh(
+                new THREE.PlaneGeometry((width - doorWidth) / 2, scaledDoorHeight),
+                wallMaterial
+            );
+            frontWallRight.position.set((width + doorWidth) / 4, floorY + scaledDoorHeight / 2, frontWallZ);
+            frontWallRight.rotation.y = Math.PI;
+            frontWallRight.receiveShadow = true;
+            this.scene.add(frontWallRight);
+            
+            // Header segment (above door)
+            if (wallHeight > scaledDoorHeight) {
+                const headerHeight = wallHeight - scaledDoorHeight;
+                const frontWallHeader = new THREE.Mesh(
+                    new THREE.PlaneGeometry(doorWidth, headerHeight),
+                    wallMaterial
+                );
+                frontWallHeader.position.set(0, floorY + scaledDoorHeight + headerHeight / 2, frontWallZ);
+                frontWallHeader.rotation.y = Math.PI;
+                frontWallHeader.receiveShadow = true;
+                this.scene.add(frontWallHeader);
+            }
+            
+            console.log('Door loaded successfully at position:', door.position);
+        }, (progress) => {
+            console.log('Loading door...', (progress.loaded / progress.total * 100) + '%');
+        }, (error) => {
+            console.error('Error loading door:', error);
+            // Create a fallback door if loading fails
+            this.createFallbackDoor(width, depth, frontWallZ, wallHeight, floorY, wallMaterial);
+        });
+
+        // Add wall-mounted sculptures to the front wall (left and right of the door)
+        const wallSculptures = [
+            {
+                glb: '/models/metal_sculptures_01.glb',
+                title: 'Metal Sculpture (Buddhist Temple)',
+                artist: 'Unknown',
+                year: 'Modern',
+                description: 'A sculpture on the wall of a Buddhist temple. This is one of two symmetrical pictures.',
+                pos: [8, 4, 14.7], // right of door, just in front of wall
+                rotY: 0 // face into the room
+            }
+        ];
